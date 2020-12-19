@@ -5,7 +5,6 @@
 #include <omp.h>
 
 #include <vector>
-#include <span>
 #include <ranges>
 #include <iostream>
 
@@ -15,17 +14,24 @@ using LeonardoHeap = std::vector< LeonardoTreeView<RAI,T> >;
 // Returns a heap view of the given range.
 // The first tree has the size of the highest leonardo number that is less or equal than the size of the range,
 // and the subsequent trees are the highest leonardo number that is less or equal than the size of what is left of the given range. 
-template <std::ranges::random_access_range RAR, typename RAI = std::ranges::iterator_t<RAR>>
-LeonardoHeap<RAI> heap_view(RAR& range) {
+template <typename RAI>
+LeonardoHeap<RAI> heap_view(RAI range_begin, RAI range_end) {
 	LeonardoHeap<RAI> heap;
 	int leonardo_pos = 0;
-	for ( int i = 0; i < std::size(range); i+=leonardo_pos ) {
+	auto range_size = std::distance(range_begin, range_end);
+	for ( int i = 0; i < range_size; i+=leonardo_pos ) {
 		// Truncates the leonardo position so it returns the largest number that its not higher than the size of the range.
-		leonardo_pos = leonardo[ (int)calculate_leonardo_position( std::size(range)-i )];
-		heap.emplace_back( std::ranges::begin(range) + i, std::ranges::begin(range) + i + leonardo_pos );
+		leonardo_pos = leonardo[ (int)calculate_leonardo_position( range_size-i )];
+		heap.emplace_back( range_begin + i, range_begin + i + leonardo_pos );
 	}
 	return heap;
 }
+
+template <std::ranges::random_access_range RAR, typename RAI = std::ranges::iterator_t<RAR>>
+LeonardoHeap<RAI> heap_view(RAR& range) {
+	return heap_view( std::ranges::begin(range), std::ranges::end(range) );
+}
+
 
 // Pushes all the elements from one to one and creates a Heap View from them on every iteration,
 // It also orders them as they enter.
@@ -34,8 +40,8 @@ LeonardoHeap<RAI,T> heapify(RAR& range) {
 	RAI l_begin = std::begin(range);
 	for ( int i = 1; i <= std::size(range); i++ ) {
 		RAI l_end = std::begin(range)+i;
-		std::span<T> subrange{l_begin, l_end};
-		auto trees = heap_view(subrange);
+		//std::span<T> subrange{l_begin, l_end};
+		auto trees = heap_view(l_begin,l_end);
 		order( (trees.back()) );
 		insertion_sort(trees);
 	}
